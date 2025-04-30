@@ -39,6 +39,7 @@ if (process.env.NODE_ENV === "production") {
     res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
   });
 }
+console.log("🧭 Mounting messageRoutes at /api/messages");
 
 // 🛠 Connect DB and THEN start server
 connectDB()

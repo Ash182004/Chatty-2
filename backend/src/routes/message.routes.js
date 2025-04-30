@@ -14,3 +14,5 @@ router.get("/:id", protectRoute, getMessages);           // ✅ safe
 router.post("/:id", protectRoute, sendMessage);          // ✅ safe
 
 export default router;
+
+console.log("✅ Message routes loaded");

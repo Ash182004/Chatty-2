@@ -1,9 +1,12 @@
 import { io } from "socket.io-client";
 
+// Safely get userId from localStorage
+const userId = localStorage.getItem("userId") || "";
+
 // Initialize the socket connection
 const socket = io("http://localhost:5550", {
   query: {
-    userId: localStorage.getItem("userId"), // Retrieve the userId from localStorage
+    userId, // Ensures userId is never undefined
   },
   withCredentials: true, // Include credentials (cookies, etc.) for requests
 });
