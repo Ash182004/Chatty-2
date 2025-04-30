@@ -25,6 +25,7 @@ socket.on("newMessage", (message) => {
 socket.on("getOnlineUsers", (onlineUsers) => {
   console.log("Current online users:", onlineUsers);
 });
+socket.emit("sendMessage", { message: "Hello", receiverId: "someId" });
 
 // Export the socket instance for use in other parts of the app
 export default socket;
