@@ -12,13 +12,13 @@ const router = express.Router();
 router.get("/messages/sidebar-users", protectRoute, getUsersForSidebar);
 
 // 2. Dynamic routes with explicit validation
-router.get("/messages/:messageId", protectRoute, validateMessageId, getMessages);
-router.post("/messages/:messageId", protectRoute, validateMessageId, sendMessage);
+router.get("/messages/:id", protectRoute, validateMessageId, getMessages);  // Updated: 'messageId' to 'id'
+router.post("/messages/:id", protectRoute, validateMessageId, sendMessage);  // Updated: 'messageId' to 'id'
 
 // Parameter validation middleware
 function validateMessageId(req, res, next) {
-  const { messageId } = req.params;
-  if (!messageId || typeof messageId !== "string" || messageId.length < 1) {
+  const { id } = req.params;  // Updated: 'messageId' to 'id'
+  if (!id || typeof id !== "string" || id.length < 1) {
     return res.status(400).json({ error: "Invalid message ID format" });
   }
   next();
