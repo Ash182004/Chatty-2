@@ -32,13 +32,18 @@ app.use(cors(corsOptions));
 // Routes
 app.use("/api/auth", authRoutes);
 // Change from:
-app.use("/api/messages", messageRoutes);
+
 
 // To:
-app.use("/api/messages", (req, res, next) => {
-  console.log(`Messages route accessed: ${req.method} ${req.path}`);
+// Remove any existing messageRoutes mounting
+// Add this instead:
+app.use("/api", (req, res, next) => {
+  console.log(`API Request: ${req.method} ${req.originalUrl}`);
   next();
-}, messageRoutes);
+});
+
+// Mount routes with explicit path prefixes
+app.use("/api", messageRoutes);
 // Production
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));

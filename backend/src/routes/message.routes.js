@@ -8,24 +8,32 @@ import { protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// 1. Static routes first
-router.get("/sidebar-users", protectRoute, getUsersForSidebar);
+// 1. Static routes first (with full path)
+router.get("/messages/sidebar-users", protectRoute, getUsersForSidebar);
 
-// 2. Dynamic routes with explicit parameter names
-router.get("/:messageId", protectRoute, getMessages);  // Changed from :id to :messageId
-router.post("/:messageId", protectRoute, sendMessage);
+// 2. Dynamic routes with explicit validation
+router.get("/messages/:messageId", protectRoute, validateMessageId, getMessages);
+router.post("/messages/:messageId", protectRoute, validateMessageId, sendMessage);
 
-// 3. Add parameter validation middleware
-router.param("messageId", (req, res, next, id) => {
-  if (!id || typeof id !== "string") {
-    return res.status(400).json({ error: "Invalid message ID" });
+// Parameter validation middleware
+function validateMessageId(req, res, next) {
+  const { messageId } = req.params;
+  if (!messageId || typeof messageId !== "string" || messageId.length < 1) {
+    return res.status(400).json({ error: "Invalid message ID format" });
   }
   next();
-});
+}
 
-console.log("✅ Message routes loaded - verified paths:");
-console.log("GET /messages/sidebar-users");
-console.log("GET /messages/:messageId");
-console.log("POST /messages/:messageId");
+// Debug route registration
+const printRoutes = () => {
+  router.stack.forEach(layer => {
+    if (layer.route) {
+      const methods = Object.keys(layer.route.methods).join(',').toUpperCase();
+      console.log(`Registered: ${methods} ${layer.route.path}`);
+    }
+  });
+};
+
+printRoutes();
 
 export default router;
