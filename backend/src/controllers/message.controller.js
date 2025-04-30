@@ -1,7 +1,9 @@
+// message.controller.js
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 import cloudinary from "../lib/cloudinary.js";
-import { getReceiverSocketId, io } from "../lib/socket.js";
+import { getReceiverSocketId } from "../lib/socket.js";
+import { getIoInstance } from "../lib/socketInstance.js";
 
 export const getUsersForSidebar = async (req, res) => {
   try {
@@ -16,8 +18,6 @@ export const getUsersForSidebar = async (req, res) => {
 
 export const getMessages = async (req, res) => {
   try {
-    console.log("Authenticated user:", req.user); // ✅ Debugging
-
     const { id: userToChatId } = req.params;
     const myId = req.user._id;
 
@@ -46,7 +46,7 @@ export const sendMessage = async (req, res) => {
     if (image) {
       try {
         const uploadResponse = await cloudinary.uploader.upload(image, {
-          folder: "chat_images", // Optional: organize images
+          folder: "chat_images",
         });
         imageUrl = uploadResponse?.secure_url;
         if (!imageUrl) {
@@ -61,13 +61,14 @@ export const sendMessage = async (req, res) => {
     const newMessage = new Message({
       senderId,
       receiverId,
-      text: text || "", // Default empty if no text
+      text: text || "",
       image: imageUrl,
     });
 
     await newMessage.save();
 
     const receiverSocketId = getReceiverSocketId(receiverId);
+    const io = getIoInstance(); // ✅ fixed line
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);
     }
