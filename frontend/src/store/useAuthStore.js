@@ -4,7 +4,6 @@ import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 import axios from "axios";
 
-
 const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5550" : "/";
 
 export const useAuthStore = create((set, get) => ({
@@ -44,13 +43,16 @@ export const useAuthStore = create((set, get) => ({
   },
 
   login: async (data) => {
+    console.log("Login data:", data); // Log the data passed to login
     set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post("/auth/login", data);
+      console.log("Login response:", res.data); // Log the response data
       set({ authUser: res.data });
       toast.success("Logged in successfully");
       get().connectSocket();
     } catch (error) {
+      console.error("Login error:", error); // Log the error for debugging
       toast.error(error.response?.data?.message || "An error occurred");
     } finally {
       set({ isLoggingIn: false });
@@ -72,10 +74,9 @@ export const useAuthStore = create((set, get) => ({
   updateProfile: async (data) => {
     set({ isUpdatingProfile: true });
     try {
-      const res = await axios.patch(`${BASE_URL}/api/auth/update-profile`,data,
-        {
-          withCredentials: true, // ⬅️ VERY IMPORTANT
-        });
+      const res = await axios.patch(`${BASE_URL}/api/auth/update-profile`, data, {
+        withCredentials: true, // ⬅️ VERY IMPORTANT
+      });
       set({ authUser: res.data });
       toast.success("Profile updated successfully");
     } catch (error) {

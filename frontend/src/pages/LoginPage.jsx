@@ -13,6 +13,9 @@ const LoginPage = () => {
   const { login, isLoggingIn } = useAuthStore();
   const [error, setError] = useState(""); // State to hold error messages
 
+  // Basic email validation regex
+  const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -22,10 +25,21 @@ const LoginPage = () => {
       return;
     }
 
+    // Email format validation
+    if (!isValidEmail(formData.email)) {
+      alert("Please enter a valid email address.");
+      return;
+    }
+
     try {
       await login(formData);
     } catch (err) {
-      setError("Login failed. Please check your credentials.");
+      console.error(err); // Log the error for debugging
+      if (err.response?.data?.message) {
+        setError(err.response.data.message); // If backend provides a message
+      } else {
+        setError("Login failed. Please check your credentials.");
+      }
     }
   };
 
@@ -100,7 +114,11 @@ const LoginPage = () => {
             {/* Error Message */}
             {error && <p className="text-red-500 text-sm">{error}</p>}
 
-            <button type="submit" className="btn btn-primary w-full" disabled={isLoggingIn}>
+            <button
+              type="submit"
+              className="btn btn-primary w-full"
+              disabled={isLoggingIn || !formData.email || !formData.password}
+            >
               {isLoggingIn ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />

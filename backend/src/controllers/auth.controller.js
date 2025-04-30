@@ -48,18 +48,31 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
   const { email, password } = req.body;
   try {
+    console.log("Received login request with email:", email);
+
+    // Step 1: Find the user by email
     const user = await User.findOne({ email });
     if (!user) {
+      console.error("❌ User not found for email:", email); // Log user not found
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    // Step 2: Check if the password matches
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) {
+      console.error("❌ Incorrect password for user:", email); // Log incorrect password
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    generateToken(user._id, res);
+    // Step 3: Generate JWT token
+    try {
+      generateToken(user._id, res);
+    } catch (error) {
+      console.error("❌ JWT token generation failed:", error.message); // Log error if token generation fails
+      return res.status(500).json({ message: "Internal Server Error during token generation" });
+    }
 
+    // Step 4: Send response
     res.status(200).json({
       _id: user._id,
       fullName: user.fullName,
@@ -67,8 +80,8 @@ export const login = async (req, res) => {
       profilePic: user.profilePic,
     });
   } catch (error) {
-    console.error("Login Error:", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
+    console.error("❌ Login Error:", error.message); // Log any other unexpected error
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
 

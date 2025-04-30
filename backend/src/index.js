@@ -11,7 +11,7 @@ import { app, server } from "./lib/socket.js";
 
 dotenv.config();
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000; // Default port is 5000 if not provided
 const __dirname = path.resolve();
 
 // 🛠️ Increase the payload limit
@@ -22,10 +22,11 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "http://localhost:5173", // Frontend running on this port
     credentials: true,
   })
 );
+
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -42,6 +43,15 @@ if (process.env.NODE_ENV === "production") {
 // 🛠 Connect DB and THEN start server
 connectDB()
   .then(() => {
+    // Print all registered routes
+    app?._router?.stack?.forEach(r => {
+      if (r.route) {
+        console.log("✅ Route:", r.route.path);
+      }
+    });
+    
+
+    // Start server
     server.listen(PORT, () => {
       console.log("✅ Server is running on PORT:", PORT);
     });
@@ -50,8 +60,10 @@ connectDB()
     console.error("❌ Failed to connect to MongoDB:", err);
   });
 
+
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
   console.error("Unhandled Rejection:", err.message);
   server.close(() => process.exit(1)); // Gracefully shutdown the server
 });
+
