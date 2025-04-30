@@ -31,8 +31,14 @@ app.use(cors(corsOptions));
 
 // Routes
 app.use("/api/auth", authRoutes);
+// Change from:
 app.use("/api/messages", messageRoutes);
 
+// To:
+app.use("/api/messages", (req, res, next) => {
+  console.log(`Messages route accessed: ${req.method} ${req.path}`);
+  next();
+}, messageRoutes);
 // Production
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
