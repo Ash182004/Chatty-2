@@ -31,7 +31,8 @@ app.use(cors(corsOptions));
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api", messageRoutes);
+app.use("/api/messages", messageRoutes);
+
 
 // Production
 if (process.env.NODE_ENV === "production") {

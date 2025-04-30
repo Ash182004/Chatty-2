@@ -9,11 +9,11 @@ import { protectRoute } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 // Static routes
-router.get("/messages/sidebar-users", protectRoute, getUsersForSidebar);
+router.get("/sidebar-users", protectRoute, getUsersForSidebar);
 
 // Dynamic routes
-router.get("/messages/:id", protectRoute, validateMessageId, getMessages);
-router.post("/messages/:id", protectRoute, validateMessageId, sendMessage);
+router.get("/:id", protectRoute, validateMessageId, getMessages);
+router.post("/:id", protectRoute, validateMessageId, sendMessage);
 
 // Parameter validation middleware
 function validateMessageId(req, res, next) {
