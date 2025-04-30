@@ -3,7 +3,7 @@ import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId } from "../lib/socket.js";
-import { getIoInstance } from "../lib/socketInstance.js";
+import { getIo } from "../lib/socket.js"; // Updated import
 
 export const getUsersForSidebar = async (req, res) => {
   try {
@@ -18,7 +18,7 @@ export const getUsersForSidebar = async (req, res) => {
 
 export const getMessages = async (req, res) => {
   try {
-    const { id: userToChatId } = req.params;  // Updated: 'messageId' to 'id'
+    const { id: userToChatId } = req.params; // Get user ID to chat with
     const myId = req.user._id;
 
     const messages = await Message.find({
@@ -38,8 +38,8 @@ export const getMessages = async (req, res) => {
 export const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
-    const { id: receiverId } = req.params;  // Updated: 'messageId' to 'id'
-    const senderId = req.user._id;
+    const { id: receiverId } = req.params; // Get receiver ID from params
+    const senderId = req.user._id; // Get sender ID from the authenticated user
 
     let imageUrl = "";
 
@@ -67,10 +67,11 @@ export const sendMessage = async (req, res) => {
 
     await newMessage.save();
 
+    // Emit message to the receiver if they are connected
     const receiverSocketId = getReceiverSocketId(receiverId);
-    const io = getIoInstance(); // ✅ fixed line
+    const io = getIo();
     if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", newMessage);
+      io.to(receiverSocketId).emit("newMessage", newMessage); // Send the new message
     }
 
     res.status(201).json(newMessage);
