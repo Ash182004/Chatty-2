@@ -12,8 +12,8 @@ const router = express.Router();
 router.get("/sidebar-users", protectRoute, getUsersForSidebar);
 
 // Dynamic routes
-router.get("/:id", protectRoute, validateMessageId, getMessages);
-router.post("/:id", protectRoute, validateMessageId, sendMessage);
+router.get("/:messageid", protectRoute, validateMessageId, getMessages);
+router.post("/:messageid", protectRoute, validateMessageId, sendMessage);
 
 // Parameter validation middleware
 function validateMessageId(req, res, next) {
