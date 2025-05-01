@@ -14,8 +14,9 @@ export const generateToken = (userId, res) => {
   res.cookie("jwt", token, {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
     httpOnly: true, // Prevent client-side JS access
-    sameSite: "strict", // Prevent CSRF
+    sameSite: "none", // Prevent CSRF
     secure: process.env.NODE_ENV === "production", // HTTPS only in prod
+    domain: '.onrender.com' // Allow subdomains
   });
 
   return token;
