@@ -8,8 +8,8 @@ export const setupSocket = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
       origin: [
-        "http://localhost:5173",
-        "https://chatty-2-gk04.onrender.com"
+        "https://chatty-2-gk04.onrender.com", // Your production frontend
+        "http://localhost:5173" // Your local dev
       ],
       credentials: true,
       methods: ["GET", "POST"]
