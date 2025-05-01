@@ -1,31 +1,42 @@
 import { io } from "socket.io-client";
 
-// Safely get userId from localStorage
-const userId = localStorage.getItem("userId") || "";
+// Get userId from your auth state (don't use localStorage directly)
+const currentUserId = localStorage.getItem("userId") || "";
 
-// Initialize the socket connection
-const socket = io("http://localhost:5550", {
+// ENSURE THIS MATCHES YOUR RENDER URL EXACTLY
+const SOCKET_URL = import.meta.env.PROD
+  ? "https://chatty-2-gk04.onrender.com" 
+  : "http://localhost:5550";
+
+const socket = io(SOCKET_URL, {
+  withCredentials: true,
+  autoConnect: false,
   query: {
-    userId, // Ensures userId is never undefined
+    userId: currentUserId
   },
-  withCredentials: true, // Include credentials (cookies, etc.) for requests
+  transports: ["websocket"], // Force WebSocket only
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  path: "/socket.io" // Explicit path
 });
 
-// Handle socket connection
+// Connection handlers
 socket.on("connect", () => {
-  console.log("Connected to Socket.IO server with socket id:", socket.id);
+  console.log("Connected with ID:", socket.id);
 });
 
-// Handle new message notifications
-socket.on("newMessage", (message) => {
-  console.log("New message received:", message);
+socket.on("connect_error", (err) => {
+  console.error("Connection failed:", err.message);
+  // Implement your error handling (e.g., show toast)
 });
 
-// Handle online users update
-socket.on("getOnlineUsers", (onlineUsers) => {
-  console.log("Current online users:", onlineUsers);
-});
-socket.emit("sendMessage", { message: "Hello", receiverId: "someId" });
+// Only connect if we have a userId
+if (currentUserId) {
+  socket.connect();
+} else {
+  console.error("Socket connection aborted - missing userId");
+  // Consider redirecting to login
+}
 
-// Export the socket instance for use in other parts of the app
 export default socket;

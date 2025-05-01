@@ -1,40 +1,37 @@
 import axios from "axios";
 
-// Create an axios instance
 export const axiosInstance = axios.create({
-  baseURL: import.meta.env.MODE === "development" 
-    ? "http://localhost:5550/api" 
-    : "/api", // Use the appropriate base URL based on the environment
-  withCredentials: true, // Send cookies and other credentials with requests
+  baseURL: import.meta.env.MODE === "development"
+    ? "http://localhost:5550/api"
+    : "https://chatty-2-gk04.onrender.com/api",
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  }
 });
 
-// Interceptors to handle requests and responses
-
-// Request Interceptor
+// Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    // You can add headers here or log requests if needed
-    // Example: config.headers['Authorization'] = `Bearer ${token}`;
+    // Add auth token if exists
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
-    // Handle request error
-    console.error("Request Error: ", error);
     return Promise.reject(error);
   }
 );
 
-// Response Interceptor
+// Response interceptor
 axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // Handle response error
-    console.error("Response Error: ", error.response || error.message);
-    if (error.response && error.response.status === 401) {
-      // Redirect to login page or handle session expiration
-      console.error("Session expired, please log in again.");
+    if (error.response?.status === 401) {
+      window.location.href = "/login"; // Redirect to login on 401
     }
     return Promise.reject(error);
   }
