@@ -30,14 +30,22 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Routes
+// In index.js, modify the route order:
+// 1. Keep API routes first
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-
-// Production
+// 2. Add specific frontend routes before wildcard
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
-  app.get("/*", (req, res) => {
+  
+  // Add this before wildcard
+  app.get("/api/*", (req, res) => {
+    res.status(404).json({ error: "API route not found" });
+  });
+  
+  // Wildcard comes last
+  app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
   });
 }
