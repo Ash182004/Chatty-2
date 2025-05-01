@@ -10,7 +10,7 @@ const router = express.Router();
 
 // Static routes
 router.get("/", protectRoute, getUsersForSidebar);
-
+router.get("", protectRoute, getUsersForSidebar);
 // Dynamic routes
 router.get("/get/:messageId", protectRoute, validateMessageId, getMessages);
 router.post("/send/:messageId", protectRoute, validateMessageId, sendMessage);
