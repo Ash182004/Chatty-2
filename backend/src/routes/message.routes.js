@@ -16,9 +16,10 @@ router.get("/get/:messageId", protectRoute, validateMessageId, getMessages);
 router.post("/send/:messageId", protectRoute, validateMessageId, sendMessage);
 
 // Parameter validation middleware
+// In message.routes.js
 function validateMessageId(req, res, next) {
-  const { id } = req.params;
-  if (!id || typeof id !== "string" || id.length < 1) {
+  const { messageId } = req.params;  // ✅ Changed from 'id' to 'messageId'
+  if (!messageId || typeof messageId !== "string" || messageId.length < 1) {
     return res.status(400).json({ error: "Invalid message ID format" });
   }
   next();
