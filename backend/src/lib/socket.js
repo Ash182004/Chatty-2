@@ -1,6 +1,7 @@
 // lib/socket.js
 import { Server } from "socket.io";
 
+let ioInstance = null; // Store the io instance
 const userSocketMap = {};
 
 export const setupSocket = (httpServer) => {
@@ -8,6 +9,7 @@ export const setupSocket = (httpServer) => {
     cors: {
       origin: [
         "http://localhost:5173",
+        "https://your-frontend-domain.com",
         "https://chatty-2-gk04.onrender.com"
       ],
       credentials: true,
@@ -17,6 +19,8 @@ export const setupSocket = (httpServer) => {
     pingTimeout: 60000,
     pingInterval: 25000
   });
+
+  ioInstance = io; // Store the instance
 
   io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId;
@@ -47,6 +51,14 @@ export const setupSocket = (httpServer) => {
   });
 
   return io;
+};
+
+// Export the getIo function
+export const getIo = () => {
+  if (!ioInstance) {
+    throw new Error("Socket.IO not initialized");
+  }
+  return ioInstance;
 };
 
 export const getReceiverSocketId = (userId) => userSocketMap[userId];
