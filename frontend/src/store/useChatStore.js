@@ -13,7 +13,7 @@ export const useChatStore = create((set, get) => ({
   getUsers: async () => {
     set({ isUsersLoading: true });
     try {
-      const res =await axiosInstance.get("/messages/sidebar-users"); // ✅ Correct
+      const res =await axiosInstance.get("/api/messages/sidebar-users"); // ✅ Correct
 
       set({ users: res.data });
     } catch (error) {
