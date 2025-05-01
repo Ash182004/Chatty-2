@@ -23,12 +23,31 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
-const corsOptions = {
-  origin: process.env.CLIENT_URL || "http://localhost:5173", // Update to match your client URL
-  credentials: true,
-};
-app.use(cors(corsOptions));
+const allowedOrigins = [
+  "http://localhost:5173", // Your local dev frontend
+  "https://chatty-2-gk04.onrender.com", // If using Vercel
+  // Your production frontend
+];
 
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g., mobile apps, Postman)
+    if (!origin) return callback(null, true);
+
+    // Check if the origin is in the allowed list
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Blocked by CORS: Origin not allowed"));
+    }
+  },
+  credentials: true, // Required for cookies/auth headers
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allowed HTTP methods
+  allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
+  optionsSuccessStatus: 200, // Legacy browser support
+};
+
+app.use(cors(corsOptions));
 // Routes
 // In index.js, modify the route order:
 // 1. Keep API routes first
