@@ -1,62 +1,46 @@
-// lib/socket.js
 import { Server } from "socket.io";
 
-let ioInstance = null; // Store the io instance
+let ioInstance = null;
 const userSocketMap = {};
 
 export const setupSocket = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
       origin: [
-        "https://chatty-2-gk04.onrender.com", // Your production frontend
-        "http://localhost:5173" // Your local dev
+        "https://chatty-2-gk04.onrender.com",
+        "http://localhost:5173"
       ],
       credentials: true,
       methods: ["GET", "POST"]
     },
     transports: ["websocket"],
     pingTimeout: 60000,
-    pingInterval: 25000
+    pingInterval: 25000,
+    path: "/socket.io" // Must match frontend
   });
 
-  ioInstance = io; // Store the instance
+  ioInstance = io;
 
   io.on("connection", (socket) => {
     const userId = socket.handshake.query.userId;
     
     if (!userId) {
+      console.error("Connection rejected - missing userId");
       socket.disconnect();
       return;
     }
 
-    console.log("User connected:", userId);
+    console.log(`User ${userId} connected`);
     userSocketMap[userId] = socket.id;
 
-    // Send online users list
-    io.emit("onlineUsers", Object.keys(userSocketMap));
-
-    socket.on("disconnect", () => {
-      delete userSocketMap[userId];
-      io.emit("onlineUsers", Object.keys(userSocketMap));
-      console.log("User disconnected:", userId);
-    });
-
-    socket.on("newMessage", (message) => {
-      const receiverSocketId = userSocketMap[message.receiverId];
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit("messageReceived", message);
-      }
-    });
+    // Rest of your socket logic...
   });
 
   return io;
 };
 
-// Export the getIo function
 export const getIo = () => {
-  if (!ioInstance) {
-    throw new Error("Socket.IO not initialized");
-  }
+  if (!ioInstance) throw new Error("Socket.IO not initialized");
   return ioInstance;
 };
 
