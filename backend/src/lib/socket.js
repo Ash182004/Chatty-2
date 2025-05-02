@@ -1,3 +1,8 @@
+import { Server } from "socket.io";
+
+let ioInstance = null;
+const userSocketMap = {};
+
 export const setupSocket = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
@@ -7,7 +12,7 @@ export const setupSocket = (httpServer) => {
       ],
       credentials: true
     },
-    transports: ["websocket", "polling"], // Match frontend
+    transports: ["websocket", "polling"],
     path: "/socket.io",
     pingTimeout: 60000,
     pingInterval: 25000
@@ -16,7 +21,7 @@ export const setupSocket = (httpServer) => {
   ioInstance = io;
 
   io.on("connection", (socket) => {
-    const userId = socket.handshake.auth.userId; // Changed from query to auth
+    const userId = socket.handshake.auth.userId;
     console.log(`Connection attempt from userId: ${userId}`);
     
     if (!userId) {
@@ -24,11 +29,9 @@ export const setupSocket = (httpServer) => {
       return socket.disconnect();
     }
 
-    // Store socket mapping
     userSocketMap[userId] = socket.id;
     console.log(`User ${userId} connected with socket ID: ${socket.id}`);
 
-    // Broadcast online status
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
     socket.on("disconnect", () => {
@@ -40,3 +43,10 @@ export const setupSocket = (httpServer) => {
 
   return io;
 };
+
+export const getIo = () => {
+  if (!ioInstance) throw new Error("Socket.IO not initialized");
+  return ioInstance;
+};
+
+export const getReceiverSocketId = (userId) => userSocketMap[userId];

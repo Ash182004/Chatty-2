@@ -1,55 +1,58 @@
 import { io } from "socket.io-client";
-import { useAuthStore } from "./store/useAuthStore"; // Use your auth store
+import { useAuthStore } from "./store/useAuthStore";
 
 const SOCKET_URL = import.meta.env.PROD
   ? "https://chatty-2-gk04.onrender.com"
   : "http://localhost:5550";
 
-let socket;
+let socketInstance = null;
 
 export const initSocket = () => {
-  const { authUser } = useAuthStore.getState(); // Get current user from store
+  const { authUser } = useAuthStore.getState();
   
+  if (socketInstance) return socketInstance;
+
   if (!authUser?._id) {
     console.error("Cannot initialize socket - no authenticated user");
     return null;
   }
 
-  socket = io(SOCKET_URL, {
+  socketInstance = io(SOCKET_URL, {
     withCredentials: true,
-    query: {
-      userId: authUser._id // Use the actual user ID from auth state
+    auth: {
+      userId: authUser._id
     },
-    transports: ["websocket", "polling"], // Allow fallback to polling
+    transports: ["websocket", "polling"],
     path: "/socket.io",
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
-    autoConnect: true // Let it connect immediately
+    autoConnect: true
   });
 
-  // Connection handlers
-  socket.on("connect", () => {
-    console.log("Socket connected, ID:", socket.id);
+  socketInstance.on("connect", () => {
+    console.log("Socket connected, ID:", socketInstance.id);
   });
 
-  socket.on("disconnect", (reason) => {
+  socketInstance.on("disconnect", (reason) => {
     console.log("Socket disconnected:", reason);
   });
 
-  socket.on("connect_error", (err) => {
+  socketInstance.on("connect_error", (err) => {
     console.error("Connection error:", err.message);
     setTimeout(() => {
-      socket.connect();
+      socketInstance.connect();
     }, 1000);
   });
 
-  return socket;
+  return socketInstance;
 };
 
 export const getSocket = () => {
-  if (!socket) {
+  if (!socketInstance) {
     throw new Error("Socket not initialized. Call initSocket first.");
   }
-  return socket;
+  return socketInstance;
 };
+
+export default getSocket;

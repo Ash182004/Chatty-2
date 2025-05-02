@@ -5,9 +5,10 @@ import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import { formatMessageTime } from "../lib/utils";
-import socket from "../socket.js"; // ✅ Import the socket instance
+import getSocket from "../socket.js";
 
 const ChatContainer = () => {
+  const socket = getSocket();
   const {
     messages,
     getMessages,
@@ -19,25 +20,25 @@ const ChatContainer = () => {
   const messageEndRef = useRef(null);
 
   useEffect(() => {
-    if (!selectedUser || !selectedUser._id) return;
+    if (!selectedUser?._id) return;
   
     getMessages(selectedUser._id);
   
-    // ✅ Listen for real-time incoming messages
-    socket.on("newMessage", (newMsg) => {
+    const handleNewMessage = (newMsg) => {
       if (
         (newMsg.senderId === selectedUser._id && newMsg.receiverId === authUser._id) ||
         (newMsg.senderId === authUser._id && newMsg.receiverId === selectedUser._id)
       ) {
         addMessage(newMsg);
       }
-    });
+    };
+
+    socket.on("newMessage", handleNewMessage);
   
     return () => {
-      socket.off("newMessage");
+      socket.off("newMessage", handleNewMessage);
     };
-  }, [selectedUser, selectedUser?._id, getMessages, authUser._id, addMessage]);
-  
+  }, [selectedUser, selectedUser?._id, getMessages, authUser._id, addMessage, socket]);
 
   useEffect(() => {
     if (messageEndRef.current && messages.length > 0) {
