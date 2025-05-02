@@ -1,8 +1,3 @@
-import { Server } from "socket.io";
-
-let ioInstance = null;
-const userSocketMap = {};
-
 export const setupSocket = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
@@ -10,38 +5,38 @@ export const setupSocket = (httpServer) => {
         "https://chatty-2-gk04.onrender.com",
         "http://localhost:5173"
       ],
-      credentials: true,
-      methods: ["GET", "POST"]
+      credentials: true
     },
-    transports: ["websocket"],
+    transports: ["websocket", "polling"], // Match frontend
+    path: "/socket.io",
     pingTimeout: 60000,
-    pingInterval: 25000,
-    path: "/socket.io" // Must match frontend
+    pingInterval: 25000
   });
 
   ioInstance = io;
 
   io.on("connection", (socket) => {
-    const userId = socket.handshake.query.userId;
+    const userId = socket.handshake.auth.userId; // Changed from query to auth
+    console.log(`Connection attempt from userId: ${userId}`);
     
     if (!userId) {
-      console.error("Connection rejected - missing userId");
-      socket.disconnect();
-      return;
+      console.error("No userId - disconnecting");
+      return socket.disconnect();
     }
 
-    console.log(`User ${userId} connected`);
+    // Store socket mapping
     userSocketMap[userId] = socket.id;
+    console.log(`User ${userId} connected with socket ID: ${socket.id}`);
 
-    // Rest of your socket logic...
+    // Broadcast online status
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+    socket.on("disconnect", () => {
+      console.log(`User ${userId} disconnected`);
+      delete userSocketMap[userId];
+      io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    });
   });
 
   return io;
 };
-
-export const getIo = () => {
-  if (!ioInstance) throw new Error("Socket.IO not initialized");
-  return ioInstance;
-};
-
-export const getReceiverSocketId = (userId) => userSocketMap[userId];

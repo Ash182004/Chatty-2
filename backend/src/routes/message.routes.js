@@ -13,7 +13,7 @@ router.get("/", protectRoute, getUsersForSidebar);
 
 // Dynamic routes
 router.get("/get/:messageId", protectRoute, validateMessageId, getMessages);
-router.post("/send/:messageId", protectRoute, validateMessageId, sendMessage);
+router.post("/send/:receiverId", protectRoute, validateMessageId, sendMessage);
 
 // Parameter validation middleware
 // In message.routes.js
