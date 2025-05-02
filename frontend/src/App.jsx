@@ -10,6 +10,7 @@ import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
+import { initSocket } from "./socket";
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
@@ -19,6 +20,13 @@ const App = () => {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Initialize socket when authUser is available
+  useEffect(() => {
+    if (authUser) {
+      initSocket();
+    }
+  }, [authUser]);
 
   // Show loading spinner while checking auth status
   if (isCheckingAuth && !authUser)

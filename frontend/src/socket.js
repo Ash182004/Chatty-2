@@ -10,10 +10,10 @@ let socketInstance = null;
 export const initSocket = () => {
   const { authUser } = useAuthStore.getState();
   
-  if (socketInstance) return socketInstance;
+  if (socketInstance?.connected) return socketInstance;
 
   if (!authUser?._id) {
-    console.error("Cannot initialize socket - no authenticated user");
+    console.warn("Socket initialization delayed - waiting for authentication");
     return null;
   }
 
@@ -50,7 +50,13 @@ export const initSocket = () => {
 
 export const getSocket = () => {
   if (!socketInstance) {
-    throw new Error("Socket not initialized. Call initSocket first.");
+    console.warn("Socket accessed before initialization - returning dummy socket");
+    return {
+      on: () => {},
+      off: () => {},
+      emit: () => {},
+      connected: false
+    };
   }
   return socketInstance;
 };

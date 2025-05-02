@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import ChatHeader from "./ChatHeader";
@@ -9,6 +9,7 @@ import getSocket from "../socket.js";
 
 const ChatContainer = () => {
   const socket = getSocket();
+  const [isSocketReady, setIsSocketReady] = useState(false);
   const {
     messages,
     getMessages,
@@ -20,7 +21,17 @@ const ChatContainer = () => {
   const messageEndRef = useRef(null);
 
   useEffect(() => {
-    if (!selectedUser?._id) return;
+    if (socket.connected) {
+      setIsSocketReady(true);
+    } else {
+      socket.on('connect', () => {
+        setIsSocketReady(true);
+      });
+    }
+  }, [socket]);
+
+  useEffect(() => {
+    if (!isSocketReady || !selectedUser?._id) return;
   
     getMessages(selectedUser._id);
   
@@ -38,13 +49,25 @@ const ChatContainer = () => {
     return () => {
       socket.off("newMessage", handleNewMessage);
     };
-  }, [selectedUser, selectedUser?._id, getMessages, authUser._id, addMessage, socket]);
+  }, [isSocketReady, selectedUser, selectedUser?._id, getMessages, authUser._id, addMessage, socket]);
 
   useEffect(() => {
     if (messageEndRef.current && messages.length > 0) {
       messageEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  if (!isSocketReady) {
+    return (
+      <div className="flex-1 flex flex-col overflow-auto">
+        <ChatHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <p>Connecting to chat...</p>
+        </div>
+        <MessageInput />
+      </div>
+    );
+  }
 
   if (isMessagesLoading) {
     return (
