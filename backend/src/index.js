@@ -30,21 +30,12 @@ const allowedOrigins = [
 ];
 
 const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (e.g., mobile apps, Postman)
-    if (!origin) return callback(null, true);
-
-    // Check if the origin is in the allowed list
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Blocked by CORS: Origin not allowed"));
-    }
-  },
-  credentials: true, // Required for cookies/auth headers
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Allowed HTTP methods
-  allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
-  optionsSuccessStatus: 200, // Legacy browser support
+ 
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
@@ -73,6 +64,25 @@ if (process.env.NODE_ENV === "production") {
 app.use((err, req, res, next) => {
   console.error("Error:", err);
   res.status(500).json({ error: "Internal Server Error" });
+});
+
+server.on('upgrade', (req, socket, head) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    server.emit('upgrade', req, socket, head);
+  } else {
+    console.warn(`Blocked WebSocket upgrade from: ${origin}`);
+    socket.destroy();
+  }
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    websocket: io?.engine?.clientsCount !== undefined,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // DB + Start server
