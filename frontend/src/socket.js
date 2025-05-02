@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 import { useAuthStore } from "./store/useAuthStore";
 
-const SOCKET_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5550";
+const SOCKET_URL = import.meta.env.VITE_API_BASE_URL || "https://chatty-2-gk04.onrender.com";
 
 let socketInstance = null;
 

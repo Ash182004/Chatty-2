@@ -7,7 +7,7 @@ export const setupSocket = (httpServer) => {
   const io = new Server(httpServer, {
     cors: {
       origin: [
-        "http://localhost:5173",
+        
         "https://chatty-2-gk04.onrender.com"
       ],
       credentials: true,
