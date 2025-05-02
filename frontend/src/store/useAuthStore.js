@@ -2,9 +2,8 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
-import axios from "axios";
 
-const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5550" : "/";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5550";
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
@@ -43,16 +42,14 @@ export const useAuthStore = create((set, get) => ({
   },
 
   login: async (data) => {
-    console.log("Login data:", data); // Log the data passed to login
     set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post("/auth/login", data);
-      console.log("Login response:", res.data); // Log the response data
       set({ authUser: res.data });
       toast.success("Logged in successfully");
       get().connectSocket();
     } catch (error) {
-      console.error("Login error:", error); // Log the error for debugging
+      console.error("Login error:", error);
       toast.error(error.response?.data?.message || "An error occurred");
     } finally {
       set({ isLoggingIn: false });
@@ -62,73 +59,61 @@ export const useAuthStore = create((set, get) => ({
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");
-      set({ authUser: null });
+      set({ authUser: null, onlineUsers: [] });
       toast.success("Logged out successfully");
     } catch (error) {
       toast.error(error.response?.data?.message || "Logout failed");
     } finally {
-      get().disconnectSocket(); // Ensure cleanup happens
-    }
-  },
-
-  updateProfile: async (data) => {
-    set({ isUpdatingProfile: true });
-    try {
-      const res = await axios.patch(`${BASE_URL}/api/auth/update-profile`, data, {
-        withCredentials: true, // ⬅️ VERY IMPORTANT
-      });
-      set({ authUser: res.data });
-      toast.success("Profile updated successfully");
-    } catch (error) {
-      console.log("Error in update profile:", error);
-      toast.error(error.response?.data?.message || "An error occurred");
-    } finally {
-      set({ isUpdatingProfile: false });
+      get().disconnectSocket();
     }
   },
 
   connectSocket: () => {
     const { authUser } = get();
-    
-    // Ensure authUser is available and socket is not already connected
     if (!authUser || get().socket?.connected) return;
 
     const socket = io(BASE_URL, {
-      query: { userId: authUser._id },
-      transports: ["websocket", "polling"], // Ensure using both websocket and polling as transport mechanisms
+      auth: {
+        token: authUser.token,
+        userId: authUser._id
+      },
+      transports: ["websocket", "polling"],
+      path: "/socket.io",
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      autoConnect: true,
+      withCredentials: true
     });
-
-    socket.connect();
-    set({ socket });
 
     socket.on("connect", () => {
-      console.log("Socket connected with userId:", authUser._id);
+      console.log("Socket connected, ID:", socket.id);
+      set({ socket });
     });
 
-    socket.on("getOnlineUsers", (userIds) => {
-      set({ onlineUsers: userIds });
-    });
-
-    socket.on("disconnect", () => {
-      console.log("Socket disconnected");
-      set({ socket: null });
+    socket.on("disconnect", (reason) => {
+      console.log("Socket disconnected:", reason);
+      if (reason === "io server disconnect") {
+        socket.connect();
+      }
     });
 
     socket.on("connect_error", (err) => {
-      console.log("Socket connection error:", err);
-      toast.error("Socket connection failed!");
+      console.error("Connection error:", err.message);
+      setTimeout(() => socket.connect(), 1000);
+    });
+
+    socket.on("onlineUsers", (userIds) => {
+      set({ onlineUsers: userIds });
     });
   },
 
   disconnectSocket: () => {
     const socket = get().socket;
-
-    // Disconnect socket if it is connected
     if (socket?.connected) {
       socket.disconnect();
       console.log("Socket disconnected");
     }
-
     set({ socket: null });
-  },
+  }
 }));

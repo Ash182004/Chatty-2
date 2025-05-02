@@ -1,9 +1,7 @@
-// message.controller.js
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 import cloudinary from "../lib/cloudinary.js";
-import { getReceiverSocketId } from "../lib/socket.js";
-import { getIo } from "../lib/socket.js"; // Updated import
+import { getReceiverSocketId, getIo } from "../lib/socket.js";
 
 export const getUsersForSidebar = async (req, res) => {
   try {
@@ -18,7 +16,7 @@ export const getUsersForSidebar = async (req, res) => {
 
 export const getMessages = async (req, res) => {
   try {
-    const { id: userToChatId } = req.params; // Get user ID to chat with
+    const { id: userToChatId } = req.params;
     const myId = req.user._id;
 
     const messages = await Message.find({
@@ -38,45 +36,52 @@ export const getMessages = async (req, res) => {
 export const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
-    const { id: receiverId } = req.params; // Get receiver ID from params
-    const senderId = req.user._id; // Get sender ID from the authenticated user
+    const { id: receiverId } = req.params;
+    const senderId = req.user._id;
 
-    let imageUrl = "";
-
-    if (image) {
-      try {
-        const uploadResponse = await cloudinary.uploader.upload(image, {
-          folder: "chat_images",
-        });
-        imageUrl = uploadResponse?.secure_url;
-        if (!imageUrl) {
-          return res.status(500).json({ error: "Image upload failed" });
-        }
-      } catch (uploadError) {
-        console.error("Cloudinary Upload Error:", uploadError.message);
-        return res.status(500).json({ error: "Failed to upload image" });
-      }
+    // Validate recipient
+    const recipient = await User.findById(receiverId);
+    if (!recipient) {
+      return res.status(404).json({ error: "Recipient not found" });
     }
 
+    // Validate content
+    if (!text?.trim() && !image) {
+      return res.status(400).json({ error: "Message content required" });
+    }
+
+    // Handle image upload
+    let imageUrl = "";
+    if (image) {
+      const uploadResponse = await cloudinary.uploader.upload(image, {
+        folder: "chat_images",
+      });
+      imageUrl = uploadResponse?.secure_url;
+    }
+
+    // Create and save message
     const newMessage = new Message({
       senderId,
       receiverId,
-      text: text || "",
+      text: text?.trim(),
       image: imageUrl,
     });
-
     await newMessage.save();
 
-    // Emit message to the receiver if they are connected
-    const receiverSocketId = getReceiverSocketId(receiverId);
+    // Emit to both parties
     const io = getIo();
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", newMessage); // Send the new message
-    }
+    const receiverSocketId = getReceiverSocketId(receiverId);
+    const senderSocketId = getReceiverSocketId(senderId);
+
+    if (receiverSocketId) io.to(receiverSocketId).emit("newMessage", newMessage);
+    if (senderSocketId) io.to(senderSocketId).emit("newMessage", newMessage);
 
     res.status(201).json(newMessage);
   } catch (error) {
-    console.error("Error in sendMessage:", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Send message error:", error);
+    res.status(500).json({ 
+      error: "Internal server error",
+      details: error.message 
+    });
   }
 };
