@@ -13,6 +13,7 @@ export const useAuthStore = create((set, get) => ({
   isCheckingAuth: true,
   onlineUsers: [],
   socket: null,
+  isSocketConnected: false,
 
   checkAuth: async () => {
     try {
@@ -88,11 +89,15 @@ export const useAuthStore = create((set, get) => ({
 
     socket.on("connect", () => {
       console.log("Socket connected, ID:", socket.id);
-      set({ socket });
+      set({ socket, isSocketConnected: true });
+      
+      // Notify server this user is online
+      socket.emit("userOnline", authUser._id);
     });
 
     socket.on("disconnect", (reason) => {
       console.log("Socket disconnected:", reason);
+      set({ isSocketConnected: false });
       if (reason === "io server disconnect") {
         socket.connect();
       }
@@ -100,12 +105,15 @@ export const useAuthStore = create((set, get) => ({
 
     socket.on("connect_error", (err) => {
       console.error("Connection error:", err.message);
+      set({ isSocketConnected: false });
       setTimeout(() => socket.connect(), 1000);
     });
 
     socket.on("onlineUsers", (userIds) => {
       set({ onlineUsers: userIds });
     });
+
+    set({ socket });
   },
 
   disconnectSocket: () => {
@@ -114,6 +122,6 @@ export const useAuthStore = create((set, get) => ({
       socket.disconnect();
       console.log("Socket disconnected");
     }
-    set({ socket: null });
+    set({ socket: null, isSocketConnected: false });
   }
 }));
